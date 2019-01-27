@@ -41,6 +41,8 @@ namespace EzSemble
                         while (bytes[i + j + 1] != 0 || bytes[i + j + 2] != 0)
                             j += 2;
                         string text = Encoding.Unicode.GetString(bytes, i + 1, j);
+                        if (text.Contains('"'))
+                            throw new Exception("String literals should not have quotation marks in them");
                         sb.Append($"\"{text}\"");
                         i += j + 2;
                     }
@@ -90,7 +92,7 @@ namespace EzSemble
                 }
             }
 
-            return sb.ToString();
+            return sb.ToString().TrimEnd();
         }
     }
 }
