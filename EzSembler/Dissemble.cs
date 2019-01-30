@@ -33,7 +33,7 @@ namespace EzSemble
 
                     if (b >= 0 && b <= 0x7F)
                     {
-                        sb.Append($"{b - 64}b");
+                        sb.Append($"{b - 64}");
                     }
                     else if (b == 0xA5)
                     {
@@ -41,24 +41,24 @@ namespace EzSemble
                         while (bytes[i + j + 1] != 0 || bytes[i + j + 2] != 0)
                             j += 2;
                         string text = Encoding.Unicode.GetString(bytes, i + 1, j);
-                        if (text.Contains('"'))
-                            throw new Exception("String literals should not have quotation marks in them");
+                        if (text.Contains('"') || text.Contains('\r') || text.Contains('\n'))
+                            throw new Exception("Illegal character in string literal");
                         sb.Append($"\"{text}\"");
                         i += j + 2;
                     }
                     else if (b == 0x80)
                     {
-                        sb.Append($"{BitConverter.ToSingle(bytes, i + 1)}f");
+                        sb.Append($"{BitConverter.ToSingle(bytes, i + 1)}");
                         i += 4;
                     }
                     else if (b == 0x81)
                     {
-                        sb.Append($"{BitConverter.ToDouble(bytes, i + 1)}d");
+                        sb.Append($"{BitConverter.ToDouble(bytes, i + 1)}");
                         i += 8;
                     }
                     else if (b == 0x82)
                     {
-                        sb.Append($"{BitConverter.ToInt32(bytes, i + 1)}i");
+                        sb.Append($"{BitConverter.ToInt32(bytes, i + 1)}");
                         i += 4;
                     }
                     else if (b >= 0x84 && b <= 0x8A)
@@ -83,11 +83,7 @@ namespace EzSemble
                     }
                     else
                     {
-                        sb.Append($"#{b.ToString("X")}");
-                        if (b != 0xB8 && b != 0xB9 && b != 0xBA && b != 0x90)
-                        {
-
-                        }
+                        sb.Append($"#{b.ToString("X2")}");
                     }
                 }
             }

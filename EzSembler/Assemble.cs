@@ -19,38 +19,43 @@ namespace EzSemble
                 next = current + 1;
                 if (plaintext[current] == '-' || char.IsDigit(plaintext[current]))
                 {
-                    while (next < plaintext.Length && (plaintext[next] == '.' || char.IsDigit(plaintext[next])))
+                    if (plaintext[current] == '-' && (next == plaintext.Length || !char.IsDigit(plaintext[next])))
+                        throw new Exception("Negative sign must be immediately followed by a number");
+
+                    while (next < plaintext.Length && char.IsDigit(plaintext[next]))
                         next++;
 
-                    if (next == plaintext.Length || !"bifd".Contains(plaintext[next]))
-                        throw new Exception("Number literal must be followed by a type specifier b/i/f/d");
+                    if (next + 1 < plaintext.Length && plaintext[next] == '.' && char.IsDigit(plaintext[next + 1]))
+                    {
+                        next++;
+                        while (next < plaintext.Length && char.IsDigit(plaintext[next]))
+                            next++;
+                    }
 
                     string str = plaintext.Substring(current, next - current);
-                    char type = plaintext[next];
-                    if (type == 'b')
+                    double value = double.Parse(str);
+                    if (value == Math.Floor(value))
                     {
-                        int value = int.Parse(str);
-                        if (value < -64 || value > 63)
-                            throw new Exception("Byte literal may only be from -64 to 63");
-                        bw.WriteByte((byte)(value + 64));
+                        if (value >= -64 && value <= 63)
+                        {
+                            bw.WriteByte((byte)(value + 64));
+                        }
+                        else
+                        {
+                            bw.WriteByte(0x82);
+                            bw.WriteInt32((int)value);
+                        }
                     }
-                    else if (type == 'i')
-                    {
-                        bw.WriteByte(0x82);
-                        bw.WriteInt32(int.Parse(str));
-                    }
-                    else if (type == 'f')
+                    else if (value == (float)value)
                     {
                         bw.WriteByte(0x80);
-                        bw.WriteSingle(float.Parse(str));
+                        bw.WriteSingle((float)value);
                     }
-                    else if (type == 'd')
+                    else
                     {
                         bw.WriteByte(0x81);
-                        bw.WriteDouble(double.Parse(str));
+                        bw.WriteDouble(value);
                     }
-
-                    next++;
                 }
                 else if (plaintext[current] == '"')
                 {
@@ -61,6 +66,9 @@ namespace EzSemble
                         throw new Exception("Unclosed string literal");
 
                     string value = plaintext.Substring(current + 1, next - current - 1);
+                    if (value.Contains('\r') || value.Contains('\n'))
+                        throw new Exception("String literals may not contain newlines");
+
                     bw.WriteByte(0xA5);
                     bw.WriteUTF16(value, true);
 
